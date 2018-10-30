@@ -141,6 +141,7 @@ func host2host(address1, address2 string) {
 				time.Sleep(timeout * time.Second)
 			}
 		}
+		go heartbeat(host2)
 		forward(host1, host2)
 	}
 }
@@ -174,8 +175,17 @@ func forward(conn1, conn2 net.Conn) {
 }
 
 func copyConn(conn1, conn2 net.Conn, wg *sync.WaitGroup) {
+	defer conn1.Close()
+	defer conn2.Close()
+
 	io.Copy(conn1, conn2)
-	conn1.Close()
 	log.Println("[←]", "close the connect at local:["+conn1.LocalAddr().String()+"] and remote:["+conn1.RemoteAddr().String()+"]")
 	wg.Done()
+}
+
+func heartbeat(conn net.Conn) {
+	for {
+		conn.Write([]byte(""))
+		time.Sleep(30 * time.Second)
+	}
 }
